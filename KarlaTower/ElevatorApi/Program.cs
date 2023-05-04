@@ -1,3 +1,5 @@
+using KarlaTower.Services;
+
 namespace KarlaTower;
 
 public class Program
@@ -10,6 +12,7 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddServices();
 
         var app = builder.Build();
 
