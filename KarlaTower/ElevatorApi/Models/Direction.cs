@@ -2,6 +2,7 @@ namespace KarlaTower.Models;
 
 public enum Direction
 {
-    Up = 0,
-    Down = 1
+    None = 0,
+    Up = 1,
+    Down = 2
 }

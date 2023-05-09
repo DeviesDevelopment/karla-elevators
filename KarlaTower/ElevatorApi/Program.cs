@@ -1,5 +1,3 @@
-using KarlaTower.Services;
-
 namespace KarlaTower;
 
 public class Program
@@ -13,6 +11,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddServices();
+        builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
         var app = builder.Build();
 
@@ -24,11 +23,8 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-
         app.UseAuthorization();
-
         app.MapControllers();
-
         app.Run();
     }
 }

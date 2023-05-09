@@ -29,4 +29,18 @@ public class ElevatorsController : ControllerBase
         var elevator = _elevatorService.GetElevator(id); 
         return elevator != null ? Ok(elevator) : NotFound();
     }
+    
+    [HttpPut("{id:int}/send")]
+    public ActionResult SendElevator([FromRoute] int id, [FromBody] int floor)
+    {
+        _elevatorService.SendElevator(id, floor);
+        return Accepted();
+    }
+    
+    [HttpPut("{id:int}/stop")]
+    public ActionResult StopElevator([FromRoute] int id)
+    {
+        _elevatorService.StopElevator(id);
+        return Ok();
+    }
 }

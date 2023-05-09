@@ -20,14 +20,39 @@ public class ElevatorService : IElevatorService
     {
         return Elevators.SingleOrDefault(e => e.Id == id);
     }
-    
+
+    public int OrderElevator(int floor)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void EnterElevator(int id, int floor)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void SendElevator(int id, int floor)
+    {
+        var elevator = Elevators.SingleOrDefault(e => e.Id == id) 
+                       ?? throw new InvalidOperationException();
+        elevator.Send(floor);
+    }
+
+    public void StopElevator(int id)
+    {
+        var elevator = Elevators.SingleOrDefault(e => e.Id == id) 
+                       ?? throw new InvalidOperationException();
+        elevator.Stop();
+    }
+
     private void Init()
     {
         for (var i = 0; i < 5; i++)
         {
             Elevators.Add(new Elevator
             {
-                Id = i
+                Id = i,
+                MaxOccupants = new Random().Next(2, 10)
             });
         }
     }
