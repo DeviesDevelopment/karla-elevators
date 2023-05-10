@@ -4,7 +4,8 @@ public class Elevator
 {
     private object Lock { get; } = new ();
     public int Id { get; init; }
-    public int Level { get; private set; }
+    public int CurrentLevel { get; private set; }
+    public int TargetLevel { get; private set; }
     public Direction Direction { get; private set; }
     public bool IsMoving { get; private set; }
     public int Occupants { get; private set; }
@@ -21,12 +22,13 @@ public class Elevator
             Task.Run(async () =>
             {
                 IsMoving = true;
-                Direction = floor > Level ? Direction.Up : Direction.Down;
+                Direction = floor > CurrentLevel ? Direction.Up : Direction.Down;
+                TargetLevel = floor;
                 
-                while (floor != Level && IsMoving)
+                while (floor != CurrentLevel && IsMoving)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(3));
-                    Level += floor > Level ? 1 : -1;
+                    CurrentLevel += floor > CurrentLevel ? 1 : -1;
                 }
 
                 Stop();
@@ -40,6 +42,24 @@ public class Elevator
         {
             IsMoving = false;
             Direction = Direction.None;
+        }
+    }
+
+    public void Enter()
+    {
+        lock (Lock)
+        {
+            if (Occupants < MaxOccupants)
+                Occupants++;
+        }
+    }
+    
+    public void Leave()
+    {
+        lock (Lock)
+        {
+            if (Occupants > 0)
+                Occupants--;
         }
     }
 }

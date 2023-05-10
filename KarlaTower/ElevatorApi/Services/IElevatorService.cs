@@ -6,8 +6,9 @@ public interface IElevatorService
 {
     IEnumerable<Elevator> GetAllElevators();
     Elevator? GetElevator(int id);
-    int OrderElevator(int floor);
-    void EnterElevator(int id,  int floor);
-    void SendElevator(int id,  int floor);
-    void StopElevator(int id);
+    Elevator? OrderElevator(int floor);
+    Elevator? EnterElevator(int id,  int floor);
+    Elevator? LeaveElevator(int id,  int floor);
+    Elevator? SendElevator(int id,  int floor);
+    Elevator? StopElevator(int id);
 }

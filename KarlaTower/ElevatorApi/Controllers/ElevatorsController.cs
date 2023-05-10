@@ -8,12 +8,10 @@ namespace KarlaTower.Controllers;
 [Route("[controller]")]
 public class ElevatorsController : ControllerBase
 {
-    private readonly ILogger<ElevatorsController> _logger;
     private readonly IElevatorService _elevatorService;
 
     public ElevatorsController(ILogger<ElevatorsController> logger, IElevatorService elevatorService)
     {
-        _logger = logger;
         _elevatorService = elevatorService;
     }
 
@@ -31,16 +29,37 @@ public class ElevatorsController : ControllerBase
     }
     
     [HttpPut("{id:int}/send")]
-    public ActionResult SendElevator([FromRoute] int id, [FromBody] int floor)
+    public ActionResult<Elevator> SendElevator([FromRoute] int id, [FromBody] int floor)
     {
-        _elevatorService.SendElevator(id, floor);
-        return Accepted();
+        var elevator = _elevatorService.SendElevator(id, floor);
+        return Ok(elevator);
     }
     
     [HttpPut("{id:int}/stop")]
-    public ActionResult StopElevator([FromRoute] int id)
+    public ActionResult<Elevator> StopElevator([FromRoute] int id)
     {
-        _elevatorService.StopElevator(id);
-        return Ok();
+        var elevator = _elevatorService.StopElevator(id);
+        return Ok(elevator);
+    }
+    
+    [HttpGet("order/{floor:int}")]
+    public ActionResult<Elevator> OrderElevator([FromRoute] int floor)
+    {
+        var elevator = _elevatorService.OrderElevator(floor); 
+        return elevator != null ? Ok(elevator) : NotFound();
+    }
+    
+    [HttpPut("{id:int}/enter")]
+    public ActionResult<Elevator> EnterElevator([FromRoute] int id, [FromBody] int floor)
+    {
+        var elevator = _elevatorService.EnterElevator(id, floor); 
+        return elevator != null ? Ok(elevator) : NotFound();
+    }
+    
+    [HttpPut("{id:int}/leave")]
+    public ActionResult<Elevator> LeaveElevator([FromRoute] int id, [FromBody] int floor)
+    {
+        var elevator = _elevatorService.LeaveElevator(id, floor); 
+        return elevator != null ? Ok(elevator) : NotFound();
     }
 }
