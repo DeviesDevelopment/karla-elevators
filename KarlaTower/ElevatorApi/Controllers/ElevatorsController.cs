@@ -10,7 +10,7 @@ public class ElevatorsController : ControllerBase
 {
     private readonly IElevatorService _elevatorService;
 
-    public ElevatorsController(ILogger<ElevatorsController> logger, IElevatorService elevatorService)
+    public ElevatorsController(IElevatorService elevatorService)
     {
         _elevatorService = elevatorService;
     }
