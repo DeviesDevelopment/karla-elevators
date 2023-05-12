@@ -28,14 +28,14 @@ public class ElevatorsController : ControllerBase
         return elevator != null ? Ok(elevator) : NotFound();
     }
     
-    [HttpPut("{id:int}/send")]
+    [HttpPost("{id:int}/send")]
     public ActionResult<Elevator> SendElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.SendElevator(id, floor);
         return Ok(elevator);
     }
     
-    [HttpPut("{id:int}/stop")]
+    [HttpPost("{id:int}/stop")]
     public ActionResult<Elevator> StopElevator([FromRoute] int id)
     {
         var elevator = _elevatorService.StopElevator(id);
@@ -49,14 +49,14 @@ public class ElevatorsController : ControllerBase
         return elevator != null ? Ok(elevator) : NotFound();
     }
     
-    [HttpPut("{id:int}/enter")]
+    [HttpPost("{id:int}/enter")]
     public ActionResult<Elevator> EnterElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.EnterElevator(id, floor); 
         return elevator != null ? Ok(elevator) : NotFound();
     }
     
-    [HttpPut("{id:int}/leave")]
+    [HttpPost("{id:int}/leave")]
     public ActionResult<Elevator> LeaveElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.LeaveElevator(id, floor); 

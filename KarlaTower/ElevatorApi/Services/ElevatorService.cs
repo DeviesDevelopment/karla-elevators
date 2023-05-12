@@ -26,8 +26,8 @@ public class ElevatorService : IElevatorService
         var elevator = Elevators
             .Where(e => 
                 !e.IsMoving
-                || floor > e.CurrentLevel && e.Direction == Direction.Up
-                || floor < e.CurrentLevel && e.Direction == Direction.Down)
+                || floor >= e.CurrentLevel && e.Direction == Direction.Up
+                || floor <= e.CurrentLevel && e.Direction == Direction.Down)
             .MinBy(e => Math.Abs(e.CurrentLevel - floor));
 
         if (elevator == null)
