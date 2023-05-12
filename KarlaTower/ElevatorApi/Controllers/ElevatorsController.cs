@@ -32,14 +32,14 @@ public class ElevatorsController : ControllerBase
     public ActionResult<Elevator> SendElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.SendElevator(id, floor);
-        return Ok(elevator);
+        return elevator != null ? Ok(elevator) : NotFound();
     }
     
     [HttpPost("{id:int}/stop")]
     public ActionResult<Elevator> StopElevator([FromRoute] int id)
     {
         var elevator = _elevatorService.StopElevator(id);
-        return Ok(elevator);
+        return elevator != null ? Ok(elevator) : NotFound();
     }
     
     [HttpGet("order/{floor:int}")]

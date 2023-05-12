@@ -43,20 +43,20 @@ public class Elevator
         }
     }
 
-    public void Enter()
+    public void Enter(int floor)
     {
         lock (Lock)
         {
-            if (Occupants < MaxOccupants)
+            if (Occupants < MaxOccupants && floor == CurrentLevel && !IsMoving)
                 Occupants++;
         }
     }
     
-    public void Leave()
+    public void Leave(int floor)
     {
         lock (Lock)
         {
-            if (Occupants > 0)
+            if (Occupants > 0 && floor == CurrentLevel && !IsMoving)
                 Occupants--;
         }
     }

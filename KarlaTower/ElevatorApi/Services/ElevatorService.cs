@@ -48,11 +48,7 @@ public class ElevatorService : IElevatorService
         if (elevator == null)
             return elevator;
 
-        if (floor == elevator.CurrentLevel && !elevator.IsMoving)
-        {
-            elevator.Enter();
-        }
-
+        elevator.Enter(floor);
         return elevator;
     }
     
@@ -62,11 +58,7 @@ public class ElevatorService : IElevatorService
         if (elevator == null)
             return elevator;
 
-        if (floor == elevator.CurrentLevel && !elevator.IsMoving)
-        {
-            elevator.Leave();
-        }
-
+        elevator.Leave(floor);
         return elevator;
     }
 
