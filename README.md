@@ -18,10 +18,14 @@ dotnet run --projects ElevatorApi
 
 # Tasks
 
-## Task 1 - Implement missing method
+## Task 1 - Elevator music
 
-## Task 2 - Implement missing method
+Build an api controller where it's possible to list all available songs in the music repository.
 
-## Task 3 - Implement missing method
+Add tests to verify the music controller.
 
-## Task 4 - Fix bug
+## Task 2 - Listen to the music
+
+Extend the elevator api to be able to select a song in an elevator.
+
+Verify it with tests. 
