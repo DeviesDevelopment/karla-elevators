@@ -44,7 +44,7 @@ public class ElevatorControllerTest
     {
         var response = _elevatorsController.SendElevator(id, floor).Result;
         var value = ParseOkResult<Elevator>(response);
-        Assert.Equal(floor, value.TargetLevel);
+        Assert.Equal(floor, value.TargetFloor);
 
         while (value.IsMoving)
         {
@@ -52,7 +52,46 @@ public class ElevatorControllerTest
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
         
-        Assert.Equal(floor, value.CurrentLevel);
+        Assert.Equal(floor, value.CurrentFloor);
+    }
+    
+    [Theory]
+    [InlineData(0, 3)]
+    public async Task TestConcurrentSend(int id, int floor)
+    {
+        _elevatorsController.SendElevator(id, floor);
+        _elevatorsController.SendElevator(id, floor + 1);
+        _elevatorsController.SendElevator(id, floor - 1);
+        var response = _elevatorsController.Get(id).Result;
+        var value = ParseOkResult<Elevator>(response);
+        Assert.Equal(floor, value.TargetFloor);
+
+        while (value.IsMoving)
+        {
+            value = ParseOkResult<Elevator>(_elevatorsController.Get(id).Result);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+        
+        Assert.Equal(floor, value.CurrentFloor);
+    }
+    
+    [Theory]
+    [InlineData(0, 3, 2)]
+    public async Task TestInterrupt(int id, int floor1, int floor2)
+    {
+        _elevatorsController.SendElevator(id, floor1);
+        _elevatorsController.StopElevator(id);
+        var response = _elevatorsController.SendElevator(id, floor2).Result;
+        var elevator = ParseOkResult<Elevator>(response);
+        Assert.Equal(floor2, elevator.TargetFloor);
+
+        while (elevator.IsMoving)
+        {
+            elevator = ParseOkResult<Elevator>(_elevatorsController.Get(id).Result);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+        
+        Assert.Equal(floor2, elevator.CurrentFloor);
     }
 
     [Theory]
@@ -64,8 +103,8 @@ public class ElevatorControllerTest
         var response2 = _elevatorsController.OrderElevator(floor).Result;
         var elevator2 = ParseOkResult<Elevator>(response2);
         Assert.Equal(elevator1.Id, elevator2.Id);
-        Assert.Equal(floor, elevator1.TargetLevel);
-        Assert.True(elevator1.IsMoving || elevator1.CurrentLevel == elevator1.TargetLevel);
+        Assert.Equal(floor, elevator1.TargetFloor);
+        Assert.True(elevator1.IsMoving || elevator1.CurrentFloor == elevator1.TargetFloor);
     }
     
     [Theory]
@@ -74,7 +113,7 @@ public class ElevatorControllerTest
     {
         var response = _elevatorsController.Get(id).Result;
         var elevator = ParseOkResult<Elevator>(response);
-        response = _elevatorsController.SendElevator(id, elevator.CurrentLevel + 10).Result;
+        response = _elevatorsController.SendElevator(id, elevator.CurrentFloor + 10).Result;
         elevator = ParseOkResult<Elevator>(response);
         Assert.True(elevator.IsMoving);
         
@@ -90,7 +129,7 @@ public class ElevatorControllerTest
         var response = _elevatorsController.OrderElevator(floor).Result;
         var elevator = ParseOkResult<Elevator>(response);
 
-        while (elevator.CurrentLevel != floor)
+        while (elevator.CurrentFloor != floor)
         {
             response = _elevatorsController.Get(elevator.Id).Result;
             elevator = ParseOkResult<Elevator>(response);
@@ -108,7 +147,7 @@ public class ElevatorControllerTest
         elevator = ParseOkResult<Elevator>(response);
         Assert.Equal(elevator.MaxOccupants - 1, elevator.Occupants);
         
-        _elevatorsController.SendElevator(elevator.Id, elevator.CurrentLevel + 1);
+        _elevatorsController.SendElevator(elevator.Id, elevator.CurrentFloor + 1);
         response = _elevatorsController.EnterElevator(elevator.Id, floor).Result;
         elevator = ParseOkResult<Elevator>(response);
         Assert.Equal(elevator.MaxOccupants - 1, elevator.Occupants);

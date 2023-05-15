@@ -24,7 +24,7 @@ Build an api controller where it's possible to list all available songs in the m
 
 Add tests to verify the music controller.
 
-## Task 3 - Listen to the music
+## Task 2 - Listen to the music
 
 Extend the elevator api to be able to select a song in an elevator.
 

@@ -26,14 +26,14 @@ public class ElevatorService : IElevatorService
         var elevator = Elevators
             .Where(e => 
                 !e.IsMoving
-                || floor >= e.CurrentLevel && e.Direction == Direction.Up
-                || floor <= e.CurrentLevel && e.Direction == Direction.Down)
-            .MinBy(e => Math.Abs(e.CurrentLevel - floor));
+                || floor >= e.CurrentFloor && e.Direction == Direction.Up
+                || floor <= e.CurrentFloor && e.Direction == Direction.Down)
+            .MinBy(e => Math.Abs(e.CurrentFloor - floor));
 
         if (elevator == null)
             return null;
 
-        if (elevator.TargetLevel != floor)
+        if (elevator.TargetFloor != floor)
         {
             elevator.Stop();
             elevator.Send(floor);

@@ -3,9 +3,11 @@ namespace KarlaTower.Models;
 public class Elevator
 {
     private object Lock { get; } = new ();
+    private CancellationTokenSource? TokenSource { get; set; }
+    
     public int Id { get; init; }
-    public int CurrentLevel { get; private set; }
-    public int TargetLevel { get; private set; }
+    public int CurrentFloor { get; private set; }
+    public int TargetFloor { get; private set; }
     public Direction Direction { get; private set; }
     public bool IsMoving => Direction != Direction.None;
     public int Occupants { get; private set; }
@@ -14,27 +16,37 @@ public class Elevator
 
     public void Send(int floor)
     {
-        // Lock and check if there is a task already
-        if (IsMoving)
-            return;
+        lock (Lock)
+        {
+            if (TokenSource != null)
+                return;
+            
+            Direction = floor > CurrentFloor ? Direction.Up : Direction.Down;
+            TargetFloor = floor;
+            TokenSource = new CancellationTokenSource();
 
-        Direction = floor > CurrentLevel ? Direction.Up : Direction.Down;
-        TargetLevel = floor;
-
-        Task.Run(Move);
+            Console.WriteLine($"Sending elevator {Id} to floor {TargetFloor}");
+            Task.Run(() => Move(TokenSource.Token));
+        }
     }
 
     public void Stop()
     {
         Direction = Direction.None;
+        TokenSource?.Cancel();
+        TokenSource = null;
+        Console.WriteLine($"Stopped elevator {Id}");
     }
 
     public void Enter(int floor)
     {
         lock (Lock)
         {
-            if (Occupants < MaxOccupants && floor == CurrentLevel && !IsMoving)
+            if (Occupants < MaxOccupants && floor == CurrentFloor && !IsMoving)
+            {
                 Occupants++;
+                Console.WriteLine($"Enter elevator {Id}, {Occupants} occupants");
+            }
         }
     }
     
@@ -42,24 +54,27 @@ public class Elevator
     {
         lock (Lock)
         {
-            if (Occupants > 0 && floor == CurrentLevel && !IsMoving)
+            if (Occupants > 0 && floor == CurrentFloor && !IsMoving)
+            {
                 Occupants--;
+                Console.WriteLine($"Leaving elevator {Id}, {Occupants} occupants");
+            }
         }
     }
 
-    private async Task Move()
+    private async Task Move(CancellationToken cancellationToken)
     {
-        while (IsMoving)
+        while (IsMoving && !cancellationToken.IsCancellationRequested)
         {
             lock (Lock)
             {
-                if (CurrentLevel != TargetLevel)
-                    CurrentLevel += CurrentLevel < TargetLevel ? 1 : -1;
+                if (CurrentFloor != TargetFloor)
+                    CurrentFloor += CurrentFloor < TargetFloor ? 1 : -1;
                 else
                     Stop();
             }
             
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
         }
     }
 }
