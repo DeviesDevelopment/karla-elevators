@@ -14,33 +14,19 @@ public class Elevator
 
     public void Send(int floor)
     {
-        lock (Lock)
-        {
-            if (IsMoving)
-                return;
+        // Lock and check if there is a task already
+        if (IsMoving)
+            return;
 
-            Direction = floor > CurrentLevel ? Direction.Up : Direction.Down;
-            TargetLevel = floor;
-            
-            Task.Run(async () =>
-            {
-                while (IsMoving && CurrentLevel != TargetLevel)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(3));
-                    Move();
-                }
+        Direction = floor > CurrentLevel ? Direction.Up : Direction.Down;
+        TargetLevel = floor;
 
-                Stop();
-            });
-        }
+        Task.Run(Move);
     }
 
     public void Stop()
     {
-        lock (Lock)
-        {
-            Direction = Direction.None;
-        }
+        Direction = Direction.None;
     }
 
     public void Enter(int floor)
@@ -61,14 +47,19 @@ public class Elevator
         }
     }
 
-    private void Move()
+    private async Task Move()
     {
-        lock (Lock)
+        while (IsMoving)
         {
-            if (CurrentLevel == TargetLevel)
-                return;
+            lock (Lock)
+            {
+                if (CurrentLevel != TargetLevel)
+                    CurrentLevel += CurrentLevel < TargetLevel ? 1 : -1;
+                else
+                    Stop();
+            }
             
-            CurrentLevel += CurrentLevel < TargetLevel ? 1 : -1;
+            await Task.Delay(TimeSpan.FromSeconds(3));
         }
     }
 }
