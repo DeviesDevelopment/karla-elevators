@@ -29,14 +29,14 @@ public class ElevatorsController : ControllerBase
         return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
-    [HttpPost("{id:int}/send")]
+    [HttpPut("{id:int}/send")]
     public ActionResult<Elevator> SendElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.SendElevator(id, floor);
         return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
-    [HttpPost("{id:int}/stop")]
+    [HttpPut("{id:int}/stop")]
     public ActionResult<Elevator> StopElevator([FromRoute] int id)
     {
         var elevator = _elevatorService.StopElevator(id);
