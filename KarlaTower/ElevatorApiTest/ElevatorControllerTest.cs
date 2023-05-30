@@ -1,18 +1,22 @@
+using System.Text;
+using System.Text.Json;
 using KarlaTower;
 using KarlaTower.Controllers;
 using KarlaTower.Models;
 using KarlaTower.Services;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ElevatorApiTest;
 
-public class ElevatorControllerTest
+public class ElevatorControllerTest : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly ElevatorsController _elevatorsController;
+    private readonly WebApplicationFactory<Program> _factory;
     
-    public ElevatorControllerTest()
+    public ElevatorControllerTest(WebApplicationFactory<Program> factory)
     {
+        _factory = factory;
         var services = new ServiceCollection();
         services.AddServices();
         var provider = services.BuildServiceProvider();
@@ -22,72 +26,101 @@ public class ElevatorControllerTest
     }
     
     [Fact]
-    public void TestGet()
+    public async Task TestGet()
     {
-        var response = _elevatorsController.Get().Result;
-        var value = ParseOkResult<IEnumerable<Elevator>>(response);
-        Assert.NotEmpty(value);
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("elevators");
+        response.EnsureSuccessStatusCode();
+        var elevators = (await response.Content.ReadAsStringAsync()).FromJson<IEnumerable<ElevatorData>>();
+        
+        Assert.True(elevators.Any());
     }
     
     [Theory]
     [InlineData(0)]
-    public void TestGetWithId(int id)
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public async Task TestGetWithId(int id)
     {
-        var response = _elevatorsController.Get(id).Result;
-        var value = ParseOkResult<Elevator>(response);
-        Assert.Equal(id, value.Id);
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"elevators/{id}");
+        response.EnsureSuccessStatusCode();
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
+        
+        Assert.Equal(id, elevator.Id);
     }
     
     [Theory]
     [InlineData(0, 3)]
     public async Task TestSend(int id, int floor)
     {
-        var response = _elevatorsController.SendElevator(id, floor).Result;
-        var value = ParseOkResult<Elevator>(response);
-        Assert.Equal(floor, value.TargetFloor);
+        var client = _factory.CreateClient();
+        var body = new StringContent($"{floor}", Encoding.UTF8, "application/json");
+        var response = await client.PutAsync($"elevators/{id}/send", body);
+        response.EnsureSuccessStatusCode();
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
+        
+        Assert.Equal(floor, elevator.TargetFloor);
 
-        while (value.IsMoving)
+        while (elevator.IsMoving)
         {
-            value = ParseOkResult<Elevator>(_elevatorsController.Get(id).Result);
+            response = await client.GetAsync($"elevators/{id}");
+            response.EnsureSuccessStatusCode();
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
         
-        Assert.Equal(floor, value.CurrentFloor);
+        Assert.Equal(floor, elevator.CurrentFloor);
     }
     
     [Theory]
     [InlineData(0, 3)]
     public async Task TestConcurrentSend(int id, int floor)
     {
-        _elevatorsController.SendElevator(id, floor);
-        _elevatorsController.SendElevator(id, floor + 1);
-        _elevatorsController.SendElevator(id, floor - 1);
-        var response = _elevatorsController.Get(id).Result;
-        var value = ParseOkResult<Elevator>(response);
-        Assert.Equal(floor, value.TargetFloor);
+        var client = _factory.CreateClient();
+        var floors = new[] { floor, floor - 1, floor + 1 };
 
-        while (value.IsMoving)
+        foreach (var f in floors)
         {
-            value = ParseOkResult<Elevator>(_elevatorsController.Get(id).Result);
+            var body = new StringContent($"{f}", Encoding.UTF8, "application/json");
+            await client.PutAsync($"elevators/{id}/send", body);
+        }
+        
+        var response = await client.GetAsync($"elevators/{id}");
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
+        Assert.Equal(floor, elevator.TargetFloor);
+
+        while (elevator.IsMoving)
+        {
+            response = await client.GetAsync($"elevators/{id}");
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
         
-        Assert.Equal(floor, value.CurrentFloor);
+        Assert.Equal(floor, elevator.CurrentFloor);
     }
     
     [Theory]
     [InlineData(0, 3, 2)]
     public async Task TestInterrupt(int id, int floor1, int floor2)
     {
-        _elevatorsController.SendElevator(id, floor1);
-        _elevatorsController.StopElevator(id);
-        var response = _elevatorsController.SendElevator(id, floor2).Result;
-        var elevator = ParseOkResult<Elevator>(response);
+        var client = _factory.CreateClient();
+        
+        var body1 = new StringContent($"{floor1}", Encoding.UTF8, "application/json");
+        await client.PutAsync($"elevators/{id}/send", body1);
+        await client.PutAsync($"elevators/{id}/stop", null);
+        
+        var body2 = new StringContent($"{floor2}", Encoding.UTF8, "application/json");
+        var response = await client.PutAsync($"elevators/{id}/send", body2);
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.Equal(floor2, elevator.TargetFloor);
 
         while (elevator.IsMoving)
         {
-            elevator = ParseOkResult<Elevator>(_elevatorsController.Get(id).Result);
+            response = await client.GetAsync($"elevators/{id}");
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
         
@@ -96,12 +129,16 @@ public class ElevatorControllerTest
 
     [Theory]
     [InlineData(5)]
-    public void TestOrder(int floor)
+    public async Task TestOrder(int floor)
     {
-        var response1 = _elevatorsController.OrderElevator(floor).Result;
-        var elevator1 = ParseOkResult<Elevator>(response1);
-        var response2 = _elevatorsController.OrderElevator(floor).Result;
-        var elevator2 = ParseOkResult<Elevator>(response2);
+        var client = _factory.CreateClient();
+        
+        var response1 = await client.GetAsync($"elevators/order/{floor}");
+        var elevator1 = (await response1.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
+        
+        var response2 = await client.GetAsync($"elevators/order/{floor}");
+        var elevator2 = (await response2.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
+
         Assert.Equal(elevator1.Id, elevator2.Id);
         Assert.Equal(floor, elevator1.TargetFloor);
         Assert.True(elevator1.IsMoving || elevator1.CurrentFloor == elevator1.TargetFloor);
@@ -109,57 +146,64 @@ public class ElevatorControllerTest
     
     [Theory]
     [InlineData(3)]
-    public void TestStop(int id)
+    public async Task TestStop(int id)
     {
-        var response = _elevatorsController.Get(id).Result;
-        var elevator = ParseOkResult<Elevator>(response);
-        response = _elevatorsController.SendElevator(id, elevator.CurrentFloor + 10).Result;
-        elevator = ParseOkResult<Elevator>(response);
+        var client = _factory.CreateClient();
+        
+        var response = await client.GetAsync($"elevators/{id}");
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
+        var body = new StringContent($"{elevator.CurrentFloor + 10}", Encoding.UTF8, "application/json");
+        response = await client.PutAsync($"elevators/{id}/send", body);
+        elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.True(elevator.IsMoving);
         
-        response = _elevatorsController.StopElevator(id).Result;
-        elevator = ParseOkResult<Elevator>(response);
+        response = await client.PutAsync($"elevators/{id}/stop", null);
+        elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.False(elevator.IsMoving);
     }
     
     [Theory]
     [InlineData(0)]
-    public void TestEnterAndLeave(int floor)
+    public async Task TestEnterAndLeave(int floor)
     {
-        var response = _elevatorsController.OrderElevator(floor).Result;
-        var elevator = ParseOkResult<Elevator>(response);
+        var client = _factory.CreateClient();
+        
+        var response = await client.GetAsync($"elevators/order/{floor}");
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
 
         while (elevator.CurrentFloor != floor)
         {
-            response = _elevatorsController.Get(elevator.Id).Result;
-            elevator = ParseOkResult<Elevator>(response);
+            response = await client.GetAsync($"elevators/{elevator.Id}");
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         }
 
         for (var i = 0; i < elevator.MaxOccupants * 2; i++)
         {
-            response = _elevatorsController.EnterElevator(elevator.Id, floor).Result;
-            elevator = ParseOkResult<Elevator>(response);
+            var enterBody = new StringContent($"{floor}", Encoding.UTF8, "application/json");
+            response = await client.PostAsync($"elevators/{elevator.Id}/enter", enterBody);
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         }
         
         Assert.Equal(elevator.MaxOccupants, elevator.Occupants);
         
-        response = _elevatorsController.LeaveElevator(elevator.Id, floor).Result;
-        elevator = ParseOkResult<Elevator>(response);
+        var leaveBody = new StringContent($"{floor}", Encoding.UTF8, "application/json");
+        response = await client.PostAsync($"elevators/{elevator.Id}/leave", leaveBody);
+        elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.Equal(elevator.MaxOccupants - 1, elevator.Occupants);
         
-        _elevatorsController.SendElevator(elevator.Id, elevator.CurrentFloor + 1);
-        response = _elevatorsController.EnterElevator(elevator.Id, floor).Result;
-        elevator = ParseOkResult<Elevator>(response);
+        var sendBody = new StringContent($"{elevator.CurrentFloor + 1}", Encoding.UTF8, "application/json");
+        await client.PutAsync($"elevators/{elevator.Id}/send", sendBody);
+        response = await client.PostAsync($"elevators/{elevator.Id}/leave", leaveBody);
+        elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.Equal(elevator.MaxOccupants - 1, elevator.Occupants);
     }
-    
-    private static T ParseOkResult<T>(ActionResult? result) where T : class
+}
+
+public static class JsonExtensions
+{
+    public static T FromJson<T>(this string json)
     {
-        Assert.NotNull(result);
-        var objectResult = result as OkObjectResult;
-        Assert.NotNull(objectResult);
-        var response = objectResult!.Value as T;
-        Assert.NotNull(response);
-        return response!;
+        return JsonSerializer.Deserialize<T>(json) 
+               ?? throw new InvalidOperationException($"{nameof(JsonSerializer.Deserialize)} returned null for type {nameof(T)}.");
     }
 }

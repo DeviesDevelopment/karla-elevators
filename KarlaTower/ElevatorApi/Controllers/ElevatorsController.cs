@@ -1,3 +1,4 @@
+using KarlaTower.Mappers;
 using KarlaTower.Models;
 using KarlaTower.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,48 +19,48 @@ public class ElevatorsController : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<Elevator>> Get()
     {
-        return Ok(_elevatorService.GetAllElevators());
+        return Ok(_elevatorService.GetAllElevators().Select(ElevatorMapper.ToElevatorData));
     }
     
     [HttpGet("{id:int}")]
     public ActionResult<Elevator> Get([FromRoute] int id)
     {
         var elevator = _elevatorService.GetElevator(id); 
-        return elevator != null ? Ok(elevator) : NotFound();
+        return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
-    [HttpPost("{id:int}/send")]
+    [HttpPut("{id:int}/send")]
     public ActionResult<Elevator> SendElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.SendElevator(id, floor);
-        return elevator != null ? Ok(elevator) : NotFound();
+        return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
-    [HttpPost("{id:int}/stop")]
+    [HttpPut("{id:int}/stop")]
     public ActionResult<Elevator> StopElevator([FromRoute] int id)
     {
         var elevator = _elevatorService.StopElevator(id);
-        return elevator != null ? Ok(elevator) : NotFound();
+        return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
     [HttpGet("order/{floor:int}")]
     public ActionResult<Elevator> OrderElevator([FromRoute] int floor)
     {
         var elevator = _elevatorService.OrderElevator(floor); 
-        return elevator != null ? Ok(elevator) : NotFound();
+        return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
     [HttpPost("{id:int}/enter")]
     public ActionResult<Elevator> EnterElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.EnterElevator(id, floor); 
-        return elevator != null ? Ok(elevator) : NotFound();
+        return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
     
     [HttpPost("{id:int}/leave")]
     public ActionResult<Elevator> LeaveElevator([FromRoute] int id, [FromBody] int floor)
     {
         var elevator = _elevatorService.LeaveElevator(id, floor); 
-        return elevator != null ? Ok(elevator) : NotFound();
+        return elevator != null ? Ok(elevator.ToElevatorData()) : NotFound();
     }
 }
