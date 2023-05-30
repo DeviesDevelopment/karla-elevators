@@ -4,7 +4,6 @@ using KarlaTower;
 using KarlaTower.Controllers;
 using KarlaTower.Models;
 using KarlaTower.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -165,43 +164,38 @@ public class ElevatorControllerTest : IClassFixture<WebApplicationFactory<Progra
     
     [Theory]
     [InlineData(0)]
-    public void TestEnterAndLeave(int floor)
+    public async Task TestEnterAndLeave(int floor)
     {
-        var response = _elevatorsController.OrderElevator(floor).Result;
-        var elevator = ParseOkResult<ElevatorData>(response);
+        var client = _factory.CreateClient();
+        
+        var response = await client.GetAsync($"elevators/order/{floor}");
+        var elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
 
         while (elevator.CurrentFloor != floor)
         {
-            response = _elevatorsController.Get(elevator.Id).Result;
-            elevator = ParseOkResult<ElevatorData>(response);
+            response = await client.GetAsync($"elevators/{elevator.Id}");
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         }
 
         for (var i = 0; i < elevator.MaxOccupants * 2; i++)
         {
-            response = _elevatorsController.EnterElevator(elevator.Id, floor).Result;
-            elevator = ParseOkResult<ElevatorData>(response);
+            var enterBody = new StringContent($"{floor}", Encoding.UTF8, "application/json");
+            response = await client.PostAsync($"elevators/{elevator.Id}/enter", enterBody);
+            elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         }
         
         Assert.Equal(elevator.MaxOccupants, elevator.Occupants);
         
-        response = _elevatorsController.LeaveElevator(elevator.Id, floor).Result;
-        elevator = ParseOkResult<ElevatorData>(response);
+        var leaveBody = new StringContent($"{floor}", Encoding.UTF8, "application/json");
+        response = await client.PostAsync($"elevators/{elevator.Id}/leave", leaveBody);
+        elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.Equal(elevator.MaxOccupants - 1, elevator.Occupants);
         
-        _elevatorsController.SendElevator(elevator.Id, elevator.CurrentFloor + 1);
-        response = _elevatorsController.EnterElevator(elevator.Id, floor).Result;
-        elevator = ParseOkResult<ElevatorData>(response);
+        var sendBody = new StringContent($"{elevator.CurrentFloor + 1}", Encoding.UTF8, "application/json");
+        await client.PutAsync($"elevators/{elevator.Id}/send", sendBody);
+        response = await client.PostAsync($"elevators/{elevator.Id}/leave", leaveBody);
+        elevator = (await response.Content.ReadAsStringAsync()).FromJson<ElevatorData>();
         Assert.Equal(elevator.MaxOccupants - 1, elevator.Occupants);
-    }
-    
-    private static T ParseOkResult<T>(ActionResult? result) where T : class
-    {
-        Assert.NotNull(result);
-        var objectResult = result as OkObjectResult;
-        Assert.NotNull(objectResult);
-        var response = objectResult!.Value as T;
-        Assert.NotNull(response);
-        return response!;
     }
 }
 
