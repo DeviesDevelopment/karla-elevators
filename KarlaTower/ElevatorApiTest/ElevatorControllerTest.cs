@@ -1,28 +1,18 @@
 using System.Text;
 using System.Text.Json;
 using KarlaTower;
-using KarlaTower.Controllers;
 using KarlaTower.Models;
-using KarlaTower.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ElevatorApiTest;
 
 public class ElevatorControllerTest : IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly ElevatorsController _elevatorsController;
     private readonly WebApplicationFactory<Program> _factory;
     
     public ElevatorControllerTest(WebApplicationFactory<Program> factory)
     {
         _factory = factory;
-        var services = new ServiceCollection();
-        services.AddServices();
-        var provider = services.BuildServiceProvider();
-
-        var elevatorService = provider.GetService<IElevatorService>()!;
-        _elevatorsController = new ElevatorsController(elevatorService);
     }
     
     [Fact]
