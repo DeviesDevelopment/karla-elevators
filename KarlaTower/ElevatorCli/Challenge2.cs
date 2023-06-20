@@ -2,9 +2,13 @@ namespace ElevatorCli;
 
 public class Challenge2 : Challenge
 {
-    public override Task RunSolution()
+    protected override string GetName()
     {
-        PrintResult(nameof(Challenge2), string.Empty);
-        return Task.CompletedTask;
+        throw new NotImplementedException();
+    }
+
+    protected override Task<string> GetSolution()
+    {
+        throw new NotImplementedException();
     }
 }

@@ -9,14 +9,12 @@ public static class Program
         {
             new Challenge1(),
             new Challenge2(),
-            new Challenge3(),
-            new Challenge4(),
-            new Challenge5()
+            new Challenge3()
         };
 
         foreach (var challenge in challenges)
         {
-            await challenge.RunSolution();
+            await challenge.Solve();
         }
     }
 }

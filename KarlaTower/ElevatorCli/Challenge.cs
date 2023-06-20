@@ -2,9 +2,15 @@ namespace ElevatorCli;
 
 public abstract class Challenge
 {
-    public abstract Task RunSolution();
+    protected abstract string GetName();
+    protected abstract Task<string> GetSolution();
+    
+    public async Task Solve()
+    {
+        PrintResult(GetName(), await GetSolution());
+    }
 
-    public void PrintResult(string challengeName, string result)
+    private static void PrintResult(string challengeName, string result)
     {
         Console.WriteLine(string.IsNullOrEmpty(result)
             ? $"{challengeName} has no solution"
