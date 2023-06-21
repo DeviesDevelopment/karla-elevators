@@ -4,11 +4,11 @@ public class Challenge2 : Challenge
 {
     protected override string GetName()
     {
-        throw new NotImplementedException();
+        return "Challenge 2";
     }
 
     protected override Task<string> GetSolution()
     {
-        throw new NotImplementedException();
+        return Task.FromResult(string.Empty);
     }
 }
