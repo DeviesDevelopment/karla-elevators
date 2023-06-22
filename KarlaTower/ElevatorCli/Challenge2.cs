@@ -1,14 +1,14 @@
 namespace ElevatorCli;
 
-public class Challenge2 : Challenge
+/// <summary>
+/// Arrays and properties
+///
+/// 
+/// </summary>
+public class Challenge2 : IChallenge
 {
-    protected override string GetName()
+    public Task Solve()
     {
-        return "Challenge 2";
-    }
-
-    protected override Task<string> GetSolution()
-    {
-        return Task.FromResult(string.Empty);
+        return Task.CompletedTask;
     }
 }
