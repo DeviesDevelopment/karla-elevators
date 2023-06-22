@@ -7,7 +7,7 @@ namespace ElevatorCli;
 /// </summary>
 public class Challenge3 : IChallenge
 {
-    public Task Solve()
+    public Task Run()
     {
         return Task.CompletedTask;
     }
