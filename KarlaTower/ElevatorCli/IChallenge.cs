@@ -2,5 +2,5 @@ namespace ElevatorCli;
 
 public interface IChallenge
 {
-    Task Run();
+    void Run();
 }

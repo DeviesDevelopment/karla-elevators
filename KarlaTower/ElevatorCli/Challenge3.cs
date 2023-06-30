@@ -1,14 +1,14 @@
 namespace ElevatorCli;
 
 /// <summary>
-/// Tasks
+/// 
 ///
 /// 
 /// </summary>
 public class Challenge3 : IChallenge
 {
-    public Task Run()
+    public void Run()
     {
-        return Task.CompletedTask;
+        
     }
 }
