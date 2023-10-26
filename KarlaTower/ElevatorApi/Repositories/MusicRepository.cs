@@ -1,8 +1,10 @@
+using System.Collections.Immutable;
+
 namespace KarlaTower.Repositories;
 
 public static class MusicRepository
 {
-    public static readonly IEnumerable<string> ElevatorSongs = new []
+    public static ImmutableArray<string> ElevatorSongs => new()
     {
         "Easy by The Commodores",
         "Just the Way You Are by Billy Joel",
