@@ -33,11 +33,11 @@ public class ElevatorService : IElevatorService
         if (elevator == null)
             return null;
 
-        if (elevator.TargetFloor != floor)
-        {
+        if (elevator.IsMoving)
             elevator.Stop();
+        
+        if (elevator.TargetFloor != floor)
             elevator.Send(floor);
-        }
         
         return elevator;
     }
